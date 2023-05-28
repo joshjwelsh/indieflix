@@ -1,7 +1,17 @@
 from constants import *
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
 
+
+def get_dates():
+
+    current_date = datetime.now()
+    dates = []
+    for i in range(7):
+        dates.append((current_date + timedelta(days=i)).strftime('%Y-%m-%d'))
+
+    return dates
 
 class Scraper:
 	def __init__(self, source):
@@ -14,8 +24,10 @@ class Scraper:
 			self.url = 'https://www.ifccenter.com/'
 		elif source == LINCOLN_CENTER:
 			self.url = 'https://www.filmlinc.org/wp-content/themes/filmlinc/api-events.php?start=2023-04-30&end=2023-06-04'
-		elif source == ANTHOLOGY_FILM_ARCHIVES:
-			self.url = 'http://anthologyfilmarchives.org/film_screenings/calendar?view=list#day-24'
+
+		# # disable antholgy film archives for now
+		# elif source == ANTHOLOGY_FILM_ARCHIVES:
+		# 	self.url = 'http://anthologyfilmarchives.org/film_screenings/calendar?view=list#day-24'
 
 
 	def scrape_website(self):
@@ -26,24 +38,40 @@ class Scraper:
 			movies = soup.find_all('div', class_='col-sm-12 homepage-in-theater-movie')
 			for movie in movies:
 				movie_data = {}
-				h5_tags = movie.find_all('h5')
-				movie_title = movie.find('h3', class_='movie_title')
-				movie_data['h5_tags'] = [tag.text for tag in h5_tags]
-				movie_data['h5_links'] = [tag.a.get('href') for tag in h5_tags if tag.a]
-				movie_data['movie_title'] = movie_title.text if movie_title else None
+				name = movie.find('h3', class_='movie_title').find('a').text
+				showtime_day =movie.find('div', class_='film_day')
+				showtime_time = showtime_day.find('a').text
+				showtime = (showtime_day.text, showtime_time)
+				metadata = {'h5':movie.find_all('h5'),'desc':movie.find('p', class_='synopsis').text}
+				movie_data['name'] = name
+				movie_data['showtime'] = showtime
+				movie_data['metadata'] = metadata
 				data.append(movie_data)
 			return data
 		elif self.source == IFC_CENTER:
+			# Problem: This won't read the current days showtimes.
+			# Shouldnt be a problem if this is run daily 
 			response = requests.get(self.url)
 			soup = BeautifulSoup(response.text, 'html.parser')
 			weekdays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 			data = []
+			movie_data = {} 
+
 			for weekday in weekdays:
 				daily_schedule = soup.find_all('div', class_=f"daily-schedule {weekday}")
 				for day_schedule in daily_schedule:
-					h3_tags = day_schedule.find_all('h3')
-					data.extend([h3_tag.text for h3_tag in h3_tags])
-
+					date = day_schedule.find('h3').text
+					details = day_schedule.find_all('div', class_='details')
+					for detail in details:
+						movie_name = detail.find('h3').text
+						if movie_name in movie_data:
+							times = detail.find('ul', class_='times').find('li').find('a').text
+							movie_data[movie_name].append((date,times, {}))
+						else:
+							movie_data[movie_name] = []
+			
+					data.append(movie_data)
+						
 			return data
 		elif self.source == LINCOLN_CENTER:
 			
@@ -69,15 +97,22 @@ class Scraper:
 		
 
 		elif self.source == ANGELIKA:
-			response = requests.get(self.url)
-			soup = BeautifulSoup(response.text, 'html.parser')
-			films = soup.find_all('div', {'class': 'film status-now_playing'})
+			
 			data = []
-			for film in films:
-				a_href = film.find('a')['href']
-				name = film.find('h2', {'class': 'name'}).get_text(strip=True)
-				desc = film.find('div', {'class': 'desc'}).p.get_text(strip=True)
-				data.append({'name': name, 'desc': desc, 'a_href': a_href})
+			for day in get_dates():
+				url = f'{self.url}/{day}'
+				response = requests.get(url)
+				soup = BeautifulSoup(response.text, 'html.parser')
+				films = soup.find_all('div', class_='film status-now_playing')
+		
+
+				for film in films:
+					name = film.find('div', class_='text').find('a').text
+					showtimes_html = film.find('div', class_='movietimes').find_all('form')
+					
+					showtimes = (day, [showtime.find('input', class_='showtime reserved-seating')['value'] for showtime in showtimes_html])
+					metadata = {}
+					data.append({'name': name, 'showtimes': showtimes, 'metadata': metadata})
 			return data
 
 				
@@ -93,8 +128,9 @@ class Scraper:
 				data.append({'film_title': film_title, 'br_text': br_text})
 			return data
 			
-s = Scraper('anthology_film_archives')
-metadata = s.scrape_website()
-for movie in metadata:
-	print(movie)
+def output(s: Scraper):
+	metadata = s.scrape_website()
+	for movie in metadata:
+		print(movie)
+
 
