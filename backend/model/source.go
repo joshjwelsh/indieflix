@@ -49,3 +49,11 @@ func DeleteSources(db *sql.DB, id int) error {
 	}
 	return nil
 }
+
+func UpdateSources(db *sql.DB, id int, name string, website string) error {
+	_, err := db.Exec("UPDATE sources SET name = $1, website = $2  WHERE id = $3", name, website, id)
+	if err != nil {
+		return fmt.Errorf("error updating sources: %v", err)
+	}
+	return nil
+}

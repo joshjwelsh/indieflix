@@ -12,30 +12,26 @@ import (
 	"github.com/go-chi/chi"
 )
 
-func GetAllSources(env *env.Env) http.HandlerFunc {
+func AllGenres(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		sources, err := model.AllSources(env.DB)
+		genres, err := model.AllGenres(env.DB)
 		if err != nil {
-			log.Printf("Error querying sources: %v", err)
+			log.Printf("Error querying genres: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-
-		// Marshal the slice of SourceResponse
-		jsonData, err := json.Marshal(sources)
+		jsonData, err := json.Marshal(genres)
 		if err != nil {
-			log.Printf("Error marshaling sources: %v", err)
+			log.Printf("Error marshaling genres: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-
-		// Write the JSON data to the response writer
 		w.Write(jsonData)
 	}
 }
 
-func GetSources(env *env.Env) http.HandlerFunc {
+func GetGenres(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		param := chi.URLParam(r, "id")
@@ -45,15 +41,15 @@ func GetSources(env *env.Env) http.HandlerFunc {
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		source, err := model.SelectSources(env.DB, id)
+		genre, err := model.SelectGenres(env.DB, id)
 		if err != nil {
-			log.Printf("Error querying sources: %v", err)
+			log.Printf("Error querying genres: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		jsonData, err := json.Marshal(source)
+		jsonData, err := json.Marshal(genre)
 		if err != nil {
-			log.Printf("Error marshaling sources: %v", err)
+			log.Printf("Error marshaling genres: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
@@ -61,40 +57,32 @@ func GetSources(env *env.Env) http.HandlerFunc {
 	}
 }
 
-func CreateSources(env *env.Env) http.HandlerFunc {
+func CreateGenres(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		sourceRequest := view.SourceRequest{}
-		err := json.NewDecoder(r.Body).Decode(&sourceRequest)
+		var genre view.GenreRequest
+		err := json.NewDecoder(r.Body).Decode(&genre)
 		if err != nil {
-			log.Printf("Error decoding request body: %v", err)
+			log.Printf("Error decoding genre: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		id, err := model.InsertSources(env.DB, sourceRequest.Name, sourceRequest.Website)
+		id, err := model.InsertGenres(env.DB, genre.Name)
 		if err != nil {
-			log.Printf("Error inserting source: %v", err)
+			log.Printf("Error inserting genre: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		source, err := model.SelectSources(env.DB, id)
+		jsonData, err := json.Marshal(id)
 		if err != nil {
-			log.Printf("Error querying sources: %v", err)
-			http.Error(w, http.StatusText(500), 500)
-			return
-		}
-		jsonData, err := json.Marshal(source)
-		if err != nil {
-			log.Printf("Error marshaling sources: %v", err)
+			log.Printf("Error marshaling genre: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 		w.Write(jsonData)
 	}
-
 }
 
-func DeleteSources(env *env.Env) http.HandlerFunc {
+func DeleteGenres(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "id")
 		id, err := strconv.Atoi(param)
@@ -103,19 +91,24 @@ func DeleteSources(env *env.Env) http.HandlerFunc {
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		err = model.DeleteSources(env.DB, id)
+		err = model.DeleteGenres(env.DB, id)
 		if err != nil {
-			log.Printf("Error deleting source: %v", err)
+			log.Printf("Error deleting genre: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		w.WriteHeader(200)
 	}
-
 }
 
-func UpdateSources(env *env.Env) http.HandlerFunc {
+func UpdateGenres(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var genre view.GenreRequest
+		err := json.NewDecoder(r.Body).Decode(&genre)
+		if err != nil {
+			log.Printf("Error decoding genre: %v", err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 		param := chi.URLParam(r, "id")
 		id, err := strconv.Atoi(param)
 		if err != nil {
@@ -123,33 +116,24 @@ func UpdateSources(env *env.Env) http.HandlerFunc {
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		sourceRequest := view.SourceRequest{}
-		err = json.NewDecoder(r.Body).Decode(&sourceRequest)
+		err = model.UpdateGenres(env.DB, id, genre.Name)
 		if err != nil {
-			log.Printf("Error decoding request body: %v", err)
+			log.Printf("Error updating genre: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		err = model.UpdateSources(env.DB, id, sourceRequest.Name, sourceRequest.Website)
+		source, err := model.SelectGenres(env.DB, id)
 		if err != nil {
-			log.Printf("Error updating source: %v", err)
-			http.Error(w, http.StatusText(500), 500)
-			return
-		}
-		source, err := model.SelectSources(env.DB, id)
-		if err != nil {
-			log.Printf("Error querying sources: %v", err)
+			log.Printf("Error querying genre: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 		jsonData, err := json.Marshal(source)
 		if err != nil {
-			log.Printf("Error marshaling sources: %v", err)
+			log.Printf("Error marshaling genre: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 		w.Write(jsonData)
 	}
-
 }
