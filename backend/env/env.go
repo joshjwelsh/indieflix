@@ -30,9 +30,9 @@ func createDB(config config.DBConfig) *sql.DB {
 	db.SetConnMaxIdleTime(1 * time.Second)
 	// Connection Lifetime
 	db.SetConnMaxLifetime(30 * time.Second)
-
 	err = db.Ping()
 	if err != nil {
+		log.Printf("connection string: %v", connectionString)
 		log.Fatalf("Ping failed error: %v", err)
 	}
 	return db

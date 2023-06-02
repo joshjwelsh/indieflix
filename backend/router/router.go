@@ -1,4 +1,4 @@
-package api
+package router
 
 import (
 	"main/env"
@@ -28,7 +28,6 @@ func NewRouterTree(env *env.Env) *chi.Mux {
 		r.Use(m.Authenticate(env.Session))
 		r.With(m.Paginate).Get("/", handler.GetAllUsers(env))
 		r.Get("/{id}", handler.GetUsers(env))
-		r.Post("/", handler.CreateUsers(env))
 		r.Delete("/{id}", handler.DeleteUsers(env))
 		r.Put("/{id}", handler.UpdateUsers(env))
 	})
@@ -44,6 +43,9 @@ func NewRouterTree(env *env.Env) *chi.Mux {
 
 	r.Route("/login", func(r chi.Router) {
 		r.Post("/", handler.Login(env))
+	})
+	r.Route("/register", func(r chi.Router) {
+		r.Post("/", handler.CreateUsers(env))
 	})
 
 	return r
