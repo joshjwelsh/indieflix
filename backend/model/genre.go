@@ -6,8 +6,8 @@ import (
 	"main/view"
 )
 
-func AllGenres(db *sql.DB) ([]view.GenreResponse, error) {
-	rows, err := db.Query("SELECT * FROM genres")
+func AllGenres(db *sql.DB, offset, limit int) ([]view.GenreResponse, error) {
+	rows, err := db.Query("SELECT * FROM genres LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("error querying genres: %v", err)
 	}
@@ -26,7 +26,7 @@ func AllGenres(db *sql.DB) ([]view.GenreResponse, error) {
 
 func SelectGenres(db *sql.DB, id int) (view.GenreResponse, error) {
 	result := view.GenreResponse{}
-	row := db.QueryRow("SELECT * FROM genres WHERE id = $1")
+	row := db.QueryRow("SELECT * FROM genres WHERE id = $1", id)
 	if err := row.Scan(&result.ID, &result.Name, &result.CreatedAt, &result.UpdatedAt); err != nil {
 		return result, fmt.Errorf("error scanning genres: %v", err)
 	}

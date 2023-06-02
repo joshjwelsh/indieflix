@@ -12,16 +12,23 @@ import (
 	"github.com/go-chi/chi"
 )
 
-func AllGenres(env *env.Env) http.HandlerFunc {
+func GetAllGenres(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		genres, err := model.AllGenres(env.DB)
+		offset := r.Context().Value("offset").(int)
+		size := r.Context().Value("size").(int)
+		current_page := r.Context().Value("current_page").(int)
+		genres, err := model.AllGenres(env.DB, offset, size)
 		if err != nil {
 			log.Printf("Error querying genres: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		jsonData, err := json.Marshal(genres)
+		response := view.GenresResponseList{
+			Results: genres,
+			Page:    current_page,
+			Size:    len(genres),
+		}
+		jsonData, err := json.Marshal(response)
 		if err != nil {
 			log.Printf("Error marshaling genres: %v", err)
 			http.Error(w, http.StatusText(500), 500)
@@ -33,7 +40,6 @@ func AllGenres(env *env.Env) http.HandlerFunc {
 
 func GetGenres(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
 		param := chi.URLParam(r, "id")
 		id, err := strconv.Atoi(param)
 		if err != nil {

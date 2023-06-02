@@ -6,14 +6,16 @@ import (
 	"main/config"
 	"time"
 
+	"github.com/alexedwards/scs/v2"
 	_ "github.com/lib/pq"
 )
 
 type Env struct {
 	*sql.DB
+	Session *scs.SessionManager
 }
 
-func NewEnv(config config.DBConfig) *Env {
+func createDB(config config.DBConfig) *sql.DB {
 	connectionString := config.ConnectionString()
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
@@ -33,5 +35,17 @@ func NewEnv(config config.DBConfig) *Env {
 	if err != nil {
 		log.Fatalf("Ping failed error: %v", err)
 	}
-	return &Env{db}
+	return db
+}
+
+func createSession() *scs.SessionManager {
+	session := scs.New()
+	session.Lifetime = 24 * time.Hour
+	return session
+}
+
+func NewEnv(config config.DBConfig) *Env {
+	db := createDB(config)
+	session := createSession()
+	return &Env{db, session}
 }

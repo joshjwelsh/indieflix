@@ -16,3 +16,9 @@ type SourceRequest struct {
 	Name    string `json:"name"`
 	Website string `json:"website"`
 }
+
+type SourcesResponseList struct {
+	Page    int
+	Size    int
+	Results []SourceResponse `json:"results"`
+}

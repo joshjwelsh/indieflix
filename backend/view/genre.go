@@ -12,3 +12,9 @@ type GenreResponse struct {
 	CreatedAt string         `json:"created_at"`
 	UpdatedAt sql.NullString `json:"updated_at"`
 }
+
+type GenresResponseList struct {
+	Page    int
+	Size    int
+	Results []GenreResponse `json:"results"`
+}

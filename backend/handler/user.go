@@ -12,35 +12,34 @@ import (
 	"github.com/go-chi/chi"
 )
 
-func GetAllSources(env *env.Env) http.HandlerFunc {
+func GetAllUsers(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		offset := r.Context().Value("offset").(int)
-		size := r.Context().Value("size").(int)
-		current_page := r.Context().Value("current_page").(int)
-		sources, err := model.AllSources(env.DB, offset, size)
+
+		offset, size, current_page := paginate(r)
+
+		users, err := model.AllUsers(env.DB, offset, size)
+
 		if err != nil {
-			log.Printf("Error querying sources: %v", err)
+			log.Printf("Error querying users: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		response := view.SourcesResponseList{
-			Results: sources,
+		response := view.UsersResponseList{
+			Results: users,
 			Page:    current_page,
-			Size:    len(sources),
+			Size:    len(users),
 		}
 		jsonData, err := json.Marshal(response)
 		if err != nil {
-			log.Printf("Error marshaling sources: %v", err)
+			log.Printf("Error marshaling users: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-
-		// Write the JSON data to the response writer
 		w.Write(jsonData)
 	}
 }
 
-func GetSources(env *env.Env) http.HandlerFunc {
+func GetUsers(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "id")
 		id, err := strconv.Atoi(param)
@@ -49,15 +48,15 @@ func GetSources(env *env.Env) http.HandlerFunc {
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		source, err := model.SelectSources(env.DB, id)
+		user, err := model.SelectUsers(env.DB, id)
 		if err != nil {
-			log.Printf("Error querying sources: %v", err)
+			log.Printf("Error querying users: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		jsonData, err := json.Marshal(source)
+		jsonData, err := json.Marshal(user)
 		if err != nil {
-			log.Printf("Error marshaling sources: %v", err)
+			log.Printf("Error marshaling users: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
@@ -65,39 +64,38 @@ func GetSources(env *env.Env) http.HandlerFunc {
 	}
 }
 
-func CreateSources(env *env.Env) http.HandlerFunc {
+func CreateUsers(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		sourceRequest := view.SourceRequest{}
-		err := json.NewDecoder(r.Body).Decode(&sourceRequest)
+		request := view.UserRequest{}
+		err := json.NewDecoder(r.Body).Decode(&request)
 		if err != nil {
-			log.Printf("Error decoding request body: %v", err)
+			log.Printf("Error decoding user: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		id, err := model.InsertSources(env.DB, sourceRequest.Name, sourceRequest.Website)
+		id, err := model.InsertUsers(env.DB, request.Username, request.Password, request.Email)
 		if err != nil {
-			log.Printf("Error inserting source: %v", err)
+			log.Printf("Error inserting user: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		source, err := model.SelectSources(env.DB, id)
+		user, err := model.SelectUsers(env.DB, id)
 		if err != nil {
-			log.Printf("Error querying sources: %v", err)
+			log.Printf("Error querying user: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		jsonData, err := json.Marshal(source)
+		jsonData, err := json.Marshal(user)
 		if err != nil {
-			log.Printf("Error marshaling sources: %v", err)
+			log.Printf("Error marshaling user: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 		w.Write(jsonData)
 	}
-
 }
 
-func DeleteSources(env *env.Env) http.HandlerFunc {
+func DeleteUsers(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "id")
 		id, err := strconv.Atoi(param)
@@ -106,18 +104,17 @@ func DeleteSources(env *env.Env) http.HandlerFunc {
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		err = model.DeleteSources(env.DB, id)
+		err = model.DeleteUsers(env.DB, id)
 		if err != nil {
-			log.Printf("Error deleting source: %v", err)
+			log.Printf("Error deleting user: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 		w.WriteHeader(200)
 	}
-
 }
 
-func UpdateSources(env *env.Env) http.HandlerFunc {
+func UpdateUsers(env *env.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "id")
 		id, err := strconv.Atoi(param)
@@ -126,32 +123,31 @@ func UpdateSources(env *env.Env) http.HandlerFunc {
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		sourceRequest := view.SourceRequest{}
-		err = json.NewDecoder(r.Body).Decode(&sourceRequest)
+		request := view.UserRequest{}
+		err = json.NewDecoder(r.Body).Decode(&request)
 		if err != nil {
-			log.Printf("Error decoding request body: %v", err)
+			log.Printf("Error decoding user: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		err = model.UpdateSources(env.DB, id, sourceRequest.Name, sourceRequest.Website)
+		err = model.UpdateUsers(env.DB, id, request.Username, request.Password, request.Email)
 		if err != nil {
-			log.Printf("Error updating source: %v", err)
+			log.Printf("Error updating user: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		source, err := model.SelectSources(env.DB, id)
+		user, err := model.SelectUsers(env.DB, id)
 		if err != nil {
-			log.Printf("Error querying sources: %v", err)
+			log.Printf("Error querying user: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		jsonData, err := json.Marshal(source)
+		jsonData, err := json.Marshal(user)
 		if err != nil {
-			log.Printf("Error marshaling sources: %v", err)
+			log.Printf("Error marshaling user: %v", err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 		w.Write(jsonData)
 	}
-
 }

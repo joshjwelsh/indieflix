@@ -6,8 +6,8 @@ import (
 	"main/view"
 )
 
-func AllSources(db *sql.DB) ([]view.SourceResponse, error) {
-	rows, err := db.Query("SELECT * FROM sources")
+func AllSources(db *sql.DB, offset, limit int) ([]view.SourceResponse, error) {
+	rows, err := db.Query("SELECT * FROM sources LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("error querying sources: %v", err)
 	}
