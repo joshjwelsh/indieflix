@@ -6,4 +6,4 @@ CREATE TABLE genres(
         updated_at TIMESTAMP
 );
 -- +goose Down
-DROPT TABLE genres;
+DROP TABLE genres;
