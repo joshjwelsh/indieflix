@@ -23,6 +23,6 @@ jobs:
 
       - name: Deploy to Prefect Cloud
         run: >
-          uvx prefect-cloud deploy indieflix/deng/dag/daily.py:main
+          uvx prefect-cloud deploy indieflix/deng/dag/daily.py:daily
           --name dev_prefect
           --from https://github.com/joshjwelsh/indieflix 
