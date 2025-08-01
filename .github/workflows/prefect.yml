@@ -18,8 +18,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install uvx
-        run: pip install uvx
+      - name: Install uv
+        run: pip install uv 
 
       - name: Deploy to Prefect Cloud
         run: >
