@@ -1,0 +1,28 @@
+name: Prefect Deployment on Push to Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install uvx
+        run: pip install uvx
+
+      - name: Deploy to Prefect Cloud
+        run: >
+          uvx prefect-cloud deploy indieflix/deng/dag/daily.py:main
+          --name dev_prefect
+          --from https://github.com/joshjwelsh/indieflix 

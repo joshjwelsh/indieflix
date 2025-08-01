@@ -94,6 +94,8 @@ def main():
             insert_query = """
                 INSERT INTO public.metrograph_provider (title, date, start_time, datetime_utc, director_name, release_year, runtime_min, video_format, vista_film_id, "desc")
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (vista_film_id, date)
+                DO NOTHING;
             """
 
             engine.cursor.executemany(insert_query, film_records)
