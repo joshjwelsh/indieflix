@@ -1,9 +1,11 @@
 from indieflix.deng.batch.metrograph.dataclass.metrograph import Metrograph
+from indieflix.deng.utils.db import PostgresClient
 from indieflix.deng.utils.http_sessions import create_metrograph_session
 from bs4 import BeautifulSoup
-from datetime import datetime 
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from urllib.parse import urlparse, parse_qs
+import pandas as pd 
 
 CURRENT_YEAR = 2025
 
@@ -58,7 +60,7 @@ def parse_html(movie):
             datetime_utc=datetime_utc,
             director_name=director_name,
             release_year=release_year,
-            runtime_mins=runtime_mins,
+            runtime_min=runtime_mins,
             video_format=video_format,
             vista_film_id=vista_id,
             desc=desc,
@@ -81,10 +83,23 @@ def main():
             if film:
                 films.append(film)
 
-        print(films[0])
+        films = pd.DataFrame(data=films)
+        films["datetime_utc"] = films["datetime_utc"].apply(
+            lambda x: datetime.fromtimestamp(x, tz=timezone.utc)
+        )
+        with PostgresClient() as engine:
+            # Convert DataFrame rows to list of tuples
+            film_records = list(films.itertuples(index=False, name=None))  # [(title1, year1), (title2, year2), ...]
+
+            insert_query = """
+                INSERT INTO public.metrograph_provider (title, date, start_time, datetime_utc, director_name, release_year, runtime_min, video_format, vista_film_id, "desc")
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+
+            engine.cursor.executemany(insert_query, film_records)
+            engine.conn.commit()
     else:
         print(f"failed req: {r.status_code}")
-
 
 
 if __name__ == "__main__":

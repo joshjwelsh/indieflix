@@ -10,7 +10,7 @@ class Metrograph:
         datetime_utc: datetime.timestamp 
         director_name: str 
         release_year: str 
-        runtime_mins: str 
+        runtime_min: str 
         video_format: str 
         vista_film_id: str 
         desc: str 
